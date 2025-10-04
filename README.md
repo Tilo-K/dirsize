@@ -18,3 +18,9 @@ cd dirsize
 # Build the executable with Zig
 zig build-exe ./src/main.zig -O ReleaseFast --name dirsize
 ```
+
+## Windows
+
+The performance of `dirsize` can be severely impacted by Windows defender real-time protection. With real-time protection enabled you can expect around 41x slowdowns.
+
+But at least you are secure :)
