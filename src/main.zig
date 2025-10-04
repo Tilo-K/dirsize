@@ -39,7 +39,6 @@ pub fn main() !void {
 
     defer startDir.close();
     const cpus = try std.Thread.getCpuCount();
-    std.debug.print("CPUs: {d}\n", .{cpus});
 
     const threads = allocator.alloc(std.Thread, cpus) catch |err| {
         std.debug.print("Out of memory :(\n{s}\n", .{@errorName(err)});
