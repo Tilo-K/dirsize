@@ -12,7 +12,7 @@
 
 ```sh
 # Clone the repository
-git clone https://github.com/yourusername/dirsize.git
+git clone https://github.com/Tilo-K/dirsize.git
 cd dirsize
 
 # Build the executable with Zig
