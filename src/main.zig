@@ -1,5 +1,6 @@
 const std = @import("std");
 const helper = @import("helper.zig");
+const scanner = @import("scanner.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -30,7 +31,7 @@ pub fn main() !void {
         var dir = dir_stack.pop().?;
         defer dir.close();
 
-        file_size_sum += try scanDir(dir, &dir_stack, allocator);
+        file_size_sum += try scanner.scanDir(dir, &dir_stack, allocator);
     }
 
     const time_end = std.time.milliTimestamp();
@@ -38,33 +39,4 @@ pub fn main() !void {
     const formatted_size = try helper.formatAsFileSize(file_size_sum, allocator);
     std.debug.print("Total size: {s}\n", .{formatted_size});
     std.debug.print("Time elapsed: {d} ms\n", .{time_end - time_start});
-}
-
-fn scanDir(dir: std.fs.Dir, dir_stack: *std.ArrayList(std.fs.Dir), allocator: std.mem.Allocator) !u64 {
-    var iter = dir.iterate();
-    var file_size_sum: u64 = 0;
-
-    while (true) {
-        const next = iter.next() catch {
-            continue;
-        };
-
-        if (next) |entry| {
-            if (entry.kind == .directory) {
-                dir_stack.append(allocator, dir.openDir(entry.name, .{ .iterate = true }) catch unreachable) catch |err| {
-                    std.debug.print("Out of memory :(\n{s}\n", .{@errorName(err)});
-                    continue;
-                };
-            } else if (entry.kind == .file) {
-                const stat = dir.statFile(entry.name) catch |err| {
-                    std.debug.print("Error: {s}\n", .{@errorName(err)});
-                    continue;
-                };
-
-                file_size_sum += stat.size;
-            }
-        } else break;
-    }
-
-    return file_size_sum;
 }
