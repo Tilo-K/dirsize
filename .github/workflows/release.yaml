@@ -1,77 +1,77 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - "v*.*.*" # e.g. v1.2.3
+  push:
+    tags:
+      - "v*.*.*" # e.g. v1.2.3
 
 env:
-    BINARY_NAME: dirsize
-    SRC: src/main.zig
+  BINARY_NAME: dirsize
+  SRC: src/main.zig
 
 jobs:
-    create_release:
-        name: Create GitHub Release
-        runs-on: ubuntu-latest
-        outputs:
-            upload_url: ${{ steps.make_release.outputs.upload_url }}
+  create_release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.make_release.outputs.upload_url }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Create Release
+        id: make_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+  build_and_upload:
+    name: Build & Upload Assets
+    needs: create_release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - triple: x86_64-linux-gnu
+            ext: ""
+          - triple: aarch64-linux-gnu
+            ext: ""
+          - triple: x86_64-windows
+            ext: ".exe"
+          - triple: x86_64-macos
+            ext: ""
+          - triple: aarch64-macos
+            ext: ""
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.1
+
+      - name: Build for ${{ matrix.triple }}
+        run: |
+          zig build-exe "${SRC}" \
+            -Dtarget=${{ matrix.triple }} \
+            -O ReleaseFast \
+            -femit-bin="${BINARY_NAME}${{ matrix.ext }}"
+
+      - name: Package binary
+        run: |
+          mkdir -p artifacts
+          zip -j artifacts/"${BINARY_NAME}-${{ github.ref_name }}-${{ matrix.triple }}.zip" \
+            "${BINARY_NAME}${{ matrix.ext }}"
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        steps:
-            - name: Create Release
-              id: make_release
-              uses: actions/create-release@v1
-              with:
-                  tag_name: ${{ github.ref_name }}
-                  release_name: ${{ github.ref_name }}
-                  draft: false
-                  prerelease: false
-
-    build_and_upload:
-        name: Build & Upload Assets
-        needs: create_release
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                include:
-                    - triple: x86_64-linux-gnu
-                      ext: ""
-                    - triple: aarch64-linux-gnu
-                      ext: ""
-                    - triple: x86_64-windows-gnu
-                      ext: ".exe"
-                    - triple: x86_64-macos
-                      ext: ""
-                    - triple: aarch64-macos
-                      ext: ""
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-
-            - name: Install Zig
-              uses: mlugg/setup-zig@v2
-              with:
-                  version: 0.15.1
-
-            - name: Build for ${{ matrix.triple }}
-              run: |
-                  zig build-exe "${SRC}" \
-                    -Dtarget=${{ matrix.triple }} \
-                    -O ReleaseFast \
-                    -femit-bin="${BINARY_NAME}${{ matrix.ext }}"
-
-            - name: Package binary
-              run: |
-                  mkdir -p artifacts
-                  zip -j artifacts/"${BINARY_NAME}-${{ github.ref_name }}-${{ matrix.triple }}.zip" \
-                    "${BINARY_NAME}${{ matrix.ext }}"
-
-            - name: Upload release asset
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ needs.create_release.outputs.upload_url }}
-                  asset_path: artifacts/${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
-                  asset_name: ${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
-                  asset_content_type: application/zip
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: artifacts/${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
+          asset_name: ${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
+          asset_content_type: application/zip
