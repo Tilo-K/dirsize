@@ -57,7 +57,7 @@ jobs:
               run: |
                   zig build-exe "${SRC}" \
                     -Dtarget=${{ matrix.triple }} \
-                    -O ReleaseSafe \
+                    -O ReleaseFast \
                     -femit-bin="${BINARY_NAME}${{ matrix.ext }}"
 
             - name: Package binary
@@ -68,8 +68,10 @@ jobs:
 
             - name: Upload release asset
               uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   upload_url: ${{ needs.create_release.outputs.upload_url }}
-                  asset_path: artifacts/"${BINARY_NAME}-${{ github.ref_name }}-${{ matrix.triple }}.zip"
-                  asset_name: "${BINARY_NAME}-${{ github.ref_name }}-${{ matrix.triple }}.zip"
+                  asset_path: artifacts/${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
+                  asset_name: ${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.triple }}.zip
                   asset_content_type: application/zip
