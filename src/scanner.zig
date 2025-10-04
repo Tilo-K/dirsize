@@ -1,6 +1,6 @@
 const std = @import("std");
 
-fn scanDir(dir: std.fs.Dir, dir_stack: *std.ArrayList(std.fs.Dir), allocator: std.mem.Allocator) !u64 {
+pub fn scanDir(dir: std.fs.Dir, dir_stack: *std.ArrayList(std.fs.Dir), allocator: std.mem.Allocator) !u64 {
     var iter = dir.iterate();
     var file_size_sum: u64 = 0;
 
