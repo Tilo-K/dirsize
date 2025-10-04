@@ -51,13 +51,11 @@ fn scanDir(dir: std.fs.Dir, dir_stack: *std.ArrayList(std.fs.Dir), allocator: st
 
         if (next) |entry| {
             if (entry.kind == .directory) {
-                // std.debug.print("Directory: {s}\n", .{entry.name});
                 dir_stack.append(allocator, dir.openDir(entry.name, .{ .iterate = true }) catch unreachable) catch |err| {
                     std.debug.print("Out of memory :(\n{s}\n", .{@errorName(err)});
                     continue;
                 };
             } else if (entry.kind == .file) {
-                //std.debug.print("File: {s}\n", .{entry.name});
                 const stat = dir.statFile(entry.name) catch |err| {
                     std.debug.print("Error: {s}\n", .{@errorName(err)});
                     continue;
